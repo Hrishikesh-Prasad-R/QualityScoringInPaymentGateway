@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DQS Engine - Data Quality Scoring Dashboard</title>
+    <title>DQS Engine - Enterprise Data Quality Platform</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
@@ -15,50 +15,94 @@
         <header class="header">
             <div class="header-content">
                 <div class="logo">
-                    <div class="logo-icon">DQS</div>
+                    <div class="logo-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z" />
+                            <path d="M2 17l10 5 10-5" />
+                            <path d="M2 12l10 5 10-5" />
+                        </svg>
+                    </div>
                     <div class="logo-text">
-                        <h1>Data Quality Scoring Engine</h1>
-                        <p>15-Layer Payment Gateway Quality Assessment</p>
+                        <h1>DQS Engine</h1>
+                        <p>Enterprise Data Quality Platform</p>
                     </div>
                 </div>
-                <div class="header-status">
-                    <span class="status-dot"></span>
-                    <span id="apiStatus">Connecting...</span>
+                <div class="header-right">
+                    <div class="header-status">
+                        <span class="status-indicator" id="statusIndicator"></span>
+                        <span id="apiStatus">Connecting...</span>
+                    </div>
+                    <div class="header-time" id="headerTime"></div>
                 </div>
             </div>
         </header>
 
         <main class="main-content">
             <!-- Data Input Section -->
-            <section class="data-input-section glass-card">
-                <h2>Data Input</h2>
+            <section class="section-card" id="inputSection">
+                <div class="section-header">
+                    <div class="section-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                        </svg>
+                        <h2>Data Input</h2>
+                    </div>
+                </div>
+
                 <div class="input-tabs">
-                    <button class="tab-btn active" data-tab="generate" onclick="switchTab('generate')">Generate
-                        Sample</button>
-                    <button class="tab-btn" data-tab="json" onclick="switchTab('json')">JSON Input</button>
-                    <button class="tab-btn" data-tab="csv" onclick="switchTab('csv')">CSV Upload</button>
+                    <button class="tab-btn active" data-tab="generate" onclick="switchTab('generate')">
+                        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                        </svg>
+                        Generate Sample
+                    </button>
+                    <button class="tab-btn" data-tab="json" onclick="switchTab('json')">
+                        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="16 18 22 12 16 6" />
+                            <polyline points="8 6 2 12 8 18" />
+                        </svg>
+                        JSON Input
+                    </button>
+                    <button class="tab-btn" data-tab="csv" onclick="switchTab('csv')">
+                        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                            <polyline points="13 2 13 9 20 9" />
+                        </svg>
+                        CSV Upload
+                    </button>
                 </div>
 
                 <!-- Generate Tab -->
                 <div class="tab-content active" id="tab-generate">
                     <div class="control-grid">
                         <div class="control-group">
-                            <label for="txnCount">Transaction Count</label>
-                            <input type="range" id="txnCount" min="10" max="200" value="50"
-                                oninput="updateSlider('txnCount', 'txnCountValue')">
-                            <span id="txnCountValue" class="slider-value">50</span>
+                            <label>Transaction Count</label>
+                            <div class="slider-container">
+                                <input type="range" id="txnCount" min="10" max="500" value="50"
+                                    oninput="updateSlider('txnCount', 'txnCountValue')">
+                                <span id="txnCountValue" class="slider-value">50</span>
+                            </div>
                         </div>
                         <div class="control-group">
-                            <label for="anomalyRate">Anomaly Rate</label>
-                            <input type="range" id="anomalyRate" min="0" max="50" value="15"
-                                oninput="updateSlider('anomalyRate', 'anomalyRateValue')">
-                            <span id="anomalyRateValue" class="slider-value">15%</span>
+                            <label>Anomaly Rate</label>
+                            <div class="slider-container">
+                                <input type="range" id="anomalyRate" min="0" max="50" value="15"
+                                    oninput="updateSlider('anomalyRate', 'anomalyRateValue')">
+                                <span id="anomalyRateValue" class="slider-value">15%</span>
+                            </div>
                         </div>
                         <div class="control-group">
-                            <label for="useAI">Enable Gemini AI</label>
-                            <div class="toggle-switch">
-                                <input type="checkbox" id="useAI">
-                                <label for="useAI"></label>
+                            <label>AI Analysis</label>
+                            <div class="toggle-container">
+                                <div class="toggle-switch">
+                                    <input type="checkbox" id="useAI">
+                                    <label for="useAI"></label>
+                                </div>
+                                <span class="toggle-label" id="aiLabel">Disabled</span>
                             </div>
                         </div>
                     </div>
@@ -66,342 +110,582 @@
 
                 <!-- JSON Tab -->
                 <div class="tab-content" id="tab-json">
-                    <div class="json-input-container">
-                        <label>Paste your JSON transaction data:</label>
-                        <textarea id="jsonInput" class="json-textarea" placeholder='[
-  {
-    "transaction": {
-      "transaction_id": "txn_001",
-      "amount": 5000,
-      "currency": "INR",
-      ...
-    },
-    "card": { ... },
-    "merchant": { ... },
-    ...
-  }
-]'></textarea>
-                        <div class="json-actions">
-                            <button class="btn btn-secondary" onclick="validateJson()">Validate JSON</button>
-                            <button class="btn btn-secondary" onclick="loadSampleJson()">Load Sample</button>
-                            <span id="jsonStatus" class="json-status"></span>
+                    <div class="json-container">
+                        <div class="json-header">
+                            <label>Transaction Data (JSON Array)</label>
+                            <div class="json-actions">
+                                <button class="btn-sm" onclick="validateJson()">
+                                    <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <polyline points="20 6 9 17 4 12" />
+                                    </svg>
+                                    Validate
+                                </button>
+                                <button class="btn-sm" onclick="loadSampleJson()">
+                                    <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="7 10 12 15 17 10" />
+                                        <line x1="12" y1="15" x2="12" y2="3" />
+                                    </svg>
+                                    Load Sample
+                                </button>
+                                <span id="jsonStatus" class="status-tag"></span>
+                            </div>
                         </div>
+                        <textarea id="jsonInput" class="json-textarea"
+                            placeholder='[{"transaction": {"transaction_id": "txn_001", "amount": 5000, ...}, ...}]'></textarea>
                     </div>
                 </div>
 
                 <!-- CSV Tab -->
                 <div class="tab-content" id="tab-csv">
-                    <div class="csv-upload-container">
-                        <div class="file-drop-zone" id="dropZone">
-                            <div class="drop-icon">📁</div>
-                            <p>Drag and drop your CSV file here</p>
-                            <p class="drop-hint">or</p>
+                    <div class="upload-container">
+                        <div class="drop-zone" id="dropZone">
+                            <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="1.5">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            <p class="drop-text">Drag and drop CSV file here</p>
+                            <p class="drop-hint">or click to browse</p>
                             <input type="file" id="csvFile" accept=".csv" onchange="handleFileUpload(event)" hidden>
-                            <button class="btn btn-secondary"
-                                onclick="document.getElementById('csvFile').click()">Browse Files</button>
                         </div>
                         <div id="fileInfo" class="file-info" style="display: none;">
-                            <span class="file-name" id="fileName"></span>
-                            <span class="file-size" id="fileSize"></span>
-                            <button class="btn-icon-small" onclick="clearFile()">✕</button>
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                                <polyline points="13 2 13 9 20 9" />
+                            </svg>
+                            <div class="file-details">
+                                <span class="file-name" id="fileName"></span>
+                                <span class="file-size" id="fileSize"></span>
+                            </div>
+                            <button class="btn-icon" onclick="clearFile()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 </div>
 
                 <!-- Run Button -->
                 <div class="run-section">
-                    <button id="runPipelineBtn" class="btn btn-primary btn-large" onclick="runPipeline()">
-                        <span class="btn-icon">▶</span>
-                        Run Quality Analysis
+                    <button id="runPipelineBtn" class="btn-primary btn-large" onclick="runPipeline()">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="5 3 19 12 5 21 5 3" />
+                        </svg>
+                        Execute Quality Analysis
                     </button>
                 </div>
             </section>
 
             <!-- Data Preview Section -->
-            <section class="data-preview glass-card" id="dataPreviewSection" style="display: none;">
+            <section class="section-card" id="dataPreviewSection" style="display: none;">
                 <div class="section-header">
-                    <h2>Data Preview</h2>
-                    <span class="record-count" id="previewCount">0 records</span>
+                    <div class="section-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                            <line x1="3" y1="9" x2="21" y2="9" />
+                            <line x1="9" y1="21" x2="9" y2="9" />
+                        </svg>
+                        <h2>Input Data Preview</h2>
+                    </div>
+                    <span class="badge" id="previewCount">0 records</span>
                 </div>
-                <div class="preview-table-container">
-                    <table class="preview-table" id="previewTable">
+                <div class="table-wrapper">
+                    <table class="data-table" id="previewTable">
                         <thead id="previewTableHead"></thead>
                         <tbody id="previewTableBody"></tbody>
                     </table>
                 </div>
             </section>
 
-            <!-- Phase Pipeline Visualization -->
-            <section class="phase-pipeline glass-card">
-                <h2>Pipeline Phases</h2>
-                <div class="pipeline-flow">
-                    <div class="phase phase-1" data-phase="1">
-                        <div class="phase-header">
-                            <span class="phase-number">1</span>
-                            <span class="phase-name">Foundation</span>
-                        </div>
-                        <div class="phase-layers">
-                            <div class="layer" data-layer="1">L1: Input Contract</div>
-                            <div class="layer" data-layer="2">L2: Input Validation</div>
-                        </div>
+            <!-- Pipeline Visualization -->
+            <section class="section-card">
+                <div class="section-header">
+                    <div class="section-title">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                        </svg>
+                        <h2>Pipeline Execution</h2>
                     </div>
-                    <div class="pipeline-arrow">→</div>
-                    <div class="phase phase-2" data-phase="2">
-                        <div class="phase-header">
-                            <span class="phase-number">2</span>
-                            <span class="phase-name">Features</span>
-                        </div>
-                        <div class="phase-layers">
-                            <div class="layer" data-layer="3">L3: Feature Extraction</div>
-                        </div>
+                    <div class="pipeline-legend">
+                        <span class="legend-item"><span class="legend-dot passed"></span> Passed</span>
+                        <span class="legend-item"><span class="legend-dot degraded"></span> Degraded</span>
+                        <span class="legend-item"><span class="legend-dot failed"></span> Failed</span>
                     </div>
-                    <div class="pipeline-arrow">→</div>
-                    <div class="phase phase-3" data-phase="3">
-                        <div class="phase-header">
-                            <span class="phase-number">3</span>
-                            <span class="phase-name">Deterministic</span>
+                </div>
+                <div class="pipeline-container">
+                    <div class="phase-grid">
+                        <div class="phase" data-phase="1">
+                            <div class="phase-header">
+                                <span class="phase-num">01</span>
+                                <span class="phase-title">Foundation</span>
+                            </div>
+                            <div class="phase-layers">
+                                <div class="layer-card" data-layer="1" onclick="showLayerDetails('1')">
+                                    <span class="layer-id">L1</span>
+                                    <span class="layer-name">Input Contract</span>
+                                    <span class="layer-status"></span>
+                                </div>
+                                <div class="layer-card" data-layer="2" onclick="showLayerDetails('2')">
+                                    <span class="layer-id">L2</span>
+                                    <span class="layer-name">Input Validation</span>
+                                    <span class="layer-status"></span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="phase-layers">
-                            <div class="layer" data-layer="4.1">L4.1: Structural</div>
-                            <div class="layer" data-layer="4.2">L4.2: Compliance</div>
-                            <div class="layer" data-layer="4.3">L4.3: Semantic</div>
+                        <div class="phase" data-phase="2">
+                            <div class="phase-header">
+                                <span class="phase-num">02</span>
+                                <span class="phase-title">Extraction</span>
+                            </div>
+                            <div class="phase-layers">
+                                <div class="layer-card" data-layer="3" onclick="showLayerDetails('3')">
+                                    <span class="layer-id">L3</span>
+                                    <span class="layer-name">Feature Extraction</span>
+                                    <span class="layer-status"></span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="pipeline-arrow">→</div>
-                    <div class="phase phase-4" data-phase="4">
-                        <div class="phase-header">
-                            <span class="phase-number">4</span>
-                            <span class="phase-name">AI Inference</span>
+                        <div class="phase" data-phase="3">
+                            <div class="phase-header">
+                                <span class="phase-num">03</span>
+                                <span class="phase-title">Deterministic</span>
+                            </div>
+                            <div class="phase-layers">
+                                <div class="layer-card" data-layer="4.1" onclick="showLayerDetails('4.1')">
+                                    <span class="layer-id">L4.1</span>
+                                    <span class="layer-name">Structural</span>
+                                    <span class="layer-status"></span>
+                                </div>
+                                <div class="layer-card" data-layer="4.2" onclick="showLayerDetails('4.2')">
+                                    <span class="layer-id">L4.2</span>
+                                    <span class="layer-name">Compliance</span>
+                                    <span class="layer-status"></span>
+                                </div>
+                                <div class="layer-card" data-layer="4.3" onclick="showLayerDetails('4.3')">
+                                    <span class="layer-id">L4.3</span>
+                                    <span class="layer-name">Semantic</span>
+                                    <span class="layer-status"></span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="phase-layers">
-                            <div class="layer ai-layer" data-layer="4.4">L4.4: Anomaly ML</div>
-                            <div class="layer ai-layer" data-layer="4.5">L4.5: GenAI</div>
+                        <div class="phase" data-phase="4">
+                            <div class="phase-header">
+                                <span class="phase-num">04</span>
+                                <span class="phase-title">AI Inference</span>
+                            </div>
+                            <div class="phase-layers">
+                                <div class="layer-card ai-layer" data-layer="4.4" onclick="showLayerDetails('4.4')">
+                                    <span class="layer-id">L4.4</span>
+                                    <span class="layer-name">Anomaly ML</span>
+                                    <span class="layer-status"></span>
+                                </div>
+                                <div class="layer-card ai-layer" data-layer="4.5" onclick="showLayerDetails('4.5')">
+                                    <span class="layer-id">L4.5</span>
+                                    <span class="layer-name">GenAI</span>
+                                    <span class="layer-status"></span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="pipeline-arrow">→</div>
-                    <div class="phase phase-5" data-phase="5">
-                        <div class="phase-header">
-                            <span class="phase-number">5</span>
-                            <span class="phase-name">Output</span>
+                        <div class="phase" data-phase="5">
+                            <div class="phase-header">
+                                <span class="phase-num">05</span>
+                                <span class="phase-title">Output</span>
+                            </div>
+                            <div class="phase-layers">
+                                <div class="layer-card" data-layer="5" onclick="showLayerDetails('5')">
+                                    <span class="layer-id">L5</span>
+                                    <span class="layer-name">Contract</span>
+                                    <span class="layer-status"></span>
+                                </div>
+                                <div class="layer-card" data-layer="6" onclick="showLayerDetails('6')">
+                                    <span class="layer-id">L6</span>
+                                    <span class="layer-name">Stability</span>
+                                    <span class="layer-status"></span>
+                                </div>
+                                <div class="layer-card" data-layer="7" onclick="showLayerDetails('7')">
+                                    <span class="layer-id">L7</span>
+                                    <span class="layer-name">Conflicts</span>
+                                    <span class="layer-status"></span>
+                                </div>
+                                <div class="layer-card" data-layer="8" onclick="showLayerDetails('8')">
+                                    <span class="layer-id">L8</span>
+                                    <span class="layer-name">Confidence</span>
+                                    <span class="layer-status"></span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="phase-layers">
-                            <div class="layer" data-layer="5">L5: Contract</div>
-                            <div class="layer" data-layer="6">L6: Stability</div>
-                            <div class="layer" data-layer="7">L7: Conflicts</div>
-                            <div class="layer" data-layer="8">L8: Confidence</div>
+                        <div class="phase" data-phase="6">
+                            <div class="phase-header">
+                                <span class="phase-num">06</span>
+                                <span class="phase-title">Decision</span>
+                            </div>
+                            <div class="phase-layers">
+                                <div class="layer-card" data-layer="9" onclick="showLayerDetails('9')">
+                                    <span class="layer-id">L9</span>
+                                    <span class="layer-name">Decision Gate</span>
+                                    <span class="layer-status"></span>
+                                </div>
+                                <div class="layer-card" data-layer="10" onclick="showLayerDetails('10')">
+                                    <span class="layer-id">L10</span>
+                                    <span class="layer-name">Responsibility</span>
+                                    <span class="layer-status"></span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="pipeline-arrow">→</div>
-                    <div class="phase phase-6" data-phase="6">
-                        <div class="phase-header">
-                            <span class="phase-number">6</span>
-                            <span class="phase-name">Decision</span>
-                        </div>
-                        <div class="phase-layers">
-                            <div class="layer" data-layer="9">L9: Decision Gate</div>
-                            <div class="layer" data-layer="10">L10: Responsibility</div>
-                        </div>
-                    </div>
-                    <div class="pipeline-arrow">→</div>
-                    <div class="phase phase-7" data-phase="7">
-                        <div class="phase-header">
-                            <span class="phase-number">7</span>
-                            <span class="phase-name">Logging</span>
-                        </div>
-                        <div class="phase-layers">
-                            <div class="layer" data-layer="11">L11: Trace</div>
+                        <div class="phase" data-phase="7">
+                            <div class="phase-header">
+                                <span class="phase-num">07</span>
+                                <span class="phase-title">Logging</span>
+                            </div>
+                            <div class="phase-layers">
+                                <div class="layer-card" data-layer="11" onclick="showLayerDetails('11')">
+                                    <span class="layer-id">L11</span>
+                                    <span class="layer-name">Trace & Audit</span>
+                                    <span class="layer-status"></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
             <!-- Results Dashboard -->
-            <section class="results-dashboard" id="resultsSection" style="display: none;">
-                <!-- Summary Cards -->
-                <div class="summary-cards">
-                    <div class="summary-card card-success">
-                        <div class="card-icon">✓</div>
-                        <div class="card-content">
-                            <span class="card-value" id="safeCount">0</span>
-                            <span class="card-label">Safe to Use</span>
+            <section class="results-section" id="resultsSection" style="display: none;">
+                <!-- Summary Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card stat-success">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                <polyline points="22 4 12 14.01 9 11.01" />
+                            </svg>
                         </div>
-                        <div class="card-description">Ready for processing</div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="safeCount">0</span>
+                            <span class="stat-label">Safe to Process</span>
+                        </div>
                     </div>
-                    <div class="summary-card card-warning">
-                        <div class="card-icon">⚠</div>
-                        <div class="card-content">
-                            <span class="card-value" id="reviewCount">0</span>
-                            <span class="card-label">Review Required</span>
+                    <div class="stat-card stat-warning">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path
+                                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
                         </div>
-                        <div class="card-description">Needs human verification</div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="reviewCount">0</span>
+                            <span class="stat-label">Review Required</span>
+                        </div>
                     </div>
-                    <div class="summary-card card-danger">
-                        <div class="card-icon">!</div>
-                        <div class="card-content">
-                            <span class="card-value" id="escalateCount">0</span>
-                            <span class="card-label">Escalate</span>
+                    <div class="stat-card stat-danger">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="8" x2="12" y2="12" />
+                                <line x1="12" y1="16" x2="12.01" y2="16" />
+                            </svg>
                         </div>
-                        <div class="card-description">Urgent attention needed</div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="escalateCount">0</span>
+                            <span class="stat-label">Escalate</span>
+                        </div>
                     </div>
-                    <div class="summary-card card-neutral">
-                        <div class="card-icon">×</div>
-                        <div class="card-content">
-                            <span class="card-value" id="rejectedCount">0</span>
-                            <span class="card-label">Rejected</span>
+                    <div class="stat-card stat-neutral">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="15" y1="9" x2="9" y2="15" />
+                                <line x1="9" y1="9" x2="15" y2="15" />
+                            </svg>
                         </div>
-                        <div class="card-description">Failed validation</div>
+                        <div class="stat-content">
+                            <span class="stat-value" id="rejectedCount">0</span>
+                            <span class="stat-label">Rejected</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Metrics Row -->
-                <div class="metrics-row">
-                    <div class="metric-card glass-card">
-                        <div class="metric-circle" id="qualityCircle">
+                <div class="metrics-grid">
+                    <div class="metric-card section-card">
+                        <div class="metric-gauge">
                             <svg viewBox="0 0 100 100">
-                                <circle class="metric-bg" cx="50" cy="50" r="45"></circle>
-                                <circle class="metric-fill" cx="50" cy="50" r="45" id="qualityFill"></circle>
+                                <circle class="gauge-bg" cx="50" cy="50" r="40" />
+                                <circle class="gauge-fill quality-fill" cx="50" cy="50" r="40" id="qualityGauge" />
                             </svg>
-                            <div class="metric-value" id="qualityRate">0%</div>
+                            <div class="gauge-value">
+                                <span id="qualityRate">0</span>
+                                <span class="gauge-unit">%</span>
+                            </div>
                         </div>
-                        <span class="metric-label">Quality Rate</span>
-                        <span class="metric-hint">Percentage of safe records</span>
+                        <div class="metric-info">
+                            <span class="metric-label">Quality Rate</span>
+                            <span class="metric-desc">Percentage of safe records</span>
+                        </div>
                     </div>
-                    <div class="metric-card glass-card">
-                        <div class="metric-circle" id="dqsCircle">
+                    <div class="metric-card section-card">
+                        <div class="metric-gauge">
                             <svg viewBox="0 0 100 100">
-                                <circle class="metric-bg" cx="50" cy="50" r="45"></circle>
-                                <circle class="metric-fill dqs-fill" cx="50" cy="50" r="45" id="dqsFill"></circle>
+                                <circle class="gauge-bg" cx="50" cy="50" r="40" />
+                                <circle class="gauge-fill dqs-fill" cx="50" cy="50" r="40" id="dqsGauge" />
                             </svg>
-                            <div class="metric-value" id="avgDqs">0</div>
+                            <div class="gauge-value">
+                                <span id="avgDqs">0</span>
+                            </div>
                         </div>
-                        <span class="metric-label">Average DQS</span>
-                        <span class="metric-hint">Data Quality Score (0-100)</span>
-                    </div>
-                    <div class="metric-card glass-card">
                         <div class="metric-info">
-                            <span class="metric-big" id="totalRecords">0</span>
-                            <span class="metric-sub">records</span>
+                            <span class="metric-label">Average DQS</span>
+                            <span class="metric-desc">Data Quality Score (0-100)</span>
                         </div>
-                        <span class="metric-label">Total Processed</span>
-                        <span class="metric-hint">Input transactions analyzed</span>
                     </div>
-                    <div class="metric-card glass-card">
-                        <div class="metric-info">
-                            <span class="metric-big" id="duration">0</span>
-                            <span class="metric-sub">ms</span>
+                    <div class="metric-card section-card">
+                        <div class="metric-number">
+                            <span id="totalRecords">0</span>
                         </div>
-                        <span class="metric-label">Total Duration</span>
-                        <span class="metric-hint">Pipeline execution time</span>
+                        <div class="metric-info">
+                            <span class="metric-label">Total Records</span>
+                            <span class="metric-desc">Transactions analyzed</span>
+                        </div>
+                    </div>
+                    <div class="metric-card section-card">
+                        <div class="metric-number">
+                            <span id="duration">0</span>
+                            <span class="metric-suffix">ms</span>
+                        </div>
+                        <div class="metric-info">
+                            <span class="metric-label">Execution Time</span>
+                            <span class="metric-desc">Total pipeline duration</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Layer Details -->
-                <div class="layer-details glass-card">
+                <!-- Layer Execution Log -->
+                <div class="section-card">
                     <div class="section-header">
-                        <h2>Layer Execution Details</h2>
-                        <span class="layer-count">15 layers executed</span>
+                        <div class="section-title">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                <line x1="3" y1="9" x2="21" y2="9" />
+                                <line x1="9" y1="21" x2="9" y2="9" />
+                            </svg>
+                            <h2>Layer Execution Log</h2>
+                        </div>
+                        <span class="badge">15 layers</span>
                     </div>
-                    <div class="layer-table-container">
-                        <table class="layer-table">
+                    <div class="table-wrapper">
+                        <table class="data-table layer-log-table">
                             <thead>
                                 <tr>
+                                    <th>Timestamp</th>
                                     <th>Layer</th>
                                     <th>Name</th>
                                     <th>Status</th>
                                     <th>Duration</th>
                                     <th>Checks</th>
                                     <th>Details</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
-                            <tbody id="layerTableBody">
+                            <tbody id="layerLogBody">
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- AI Analysis Section -->
-                <div class="ai-analysis glass-card" id="aiAnalysisSection">
+                <!-- Records Requiring Action -->
+                <div class="section-card" id="actionRecordsSection" style="display: none;">
                     <div class="section-header">
-                        <h2>Quality Analysis Summary</h2>
-                        <span class="ai-badge">AI-Powered Insights</span>
+                        <div class="section-title">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path
+                                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                            <h2>Records Requiring Action</h2>
+                        </div>
+                        <span class="badge badge-warning" id="actionBadge">0</span>
                     </div>
-                    <div class="analysis-content" id="analysisContent">
-                        <!-- Will be populated dynamically -->
+                    <div class="action-records-grid" id="actionRecordsGrid">
                     </div>
                 </div>
 
-                <!-- Records Requiring Review -->
-                <div class="review-records glass-card" id="reviewRecordsSection" style="display: none;">
+                <!-- Output Data Table -->
+                <div class="section-card">
                     <div class="section-header">
-                        <h2>Records Requiring Attention</h2>
-                        <span class="review-count-badge" id="reviewBadge">0</span>
+                        <div class="section-title">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                            </svg>
+                            <h2>Processed Records</h2>
+                        </div>
+                        <div class="table-actions">
+                            <button class="btn-sm" onclick="exportToCSV()">
+                                <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
+                                Export CSV
+                            </button>
+                        </div>
                     </div>
-                    <div class="review-cards" id="reviewCards">
-                        <!-- Will be populated dynamically -->
+                    <div class="table-wrapper output-table-wrapper">
+                        <table class="data-table output-table">
+                            <thead id="outputTableHead">
+                            </thead>
+                            <tbody id="outputTableBody">
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <!-- Reports Section -->
-                <div class="reports-section">
-                    <div class="report-card glass-card">
+                <!-- Reports Grid -->
+                <div class="reports-grid">
+                    <div class="section-card">
                         <div class="section-header">
-                            <h3>Decision Report</h3>
-                            <button class="btn-copy" onclick="copyReport('decisionReport')">Copy</button>
+                            <div class="section-title">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                    <line x1="16" y1="13" x2="8" y2="13" />
+                                    <line x1="16" y1="17" x2="8" y2="17" />
+                                </svg>
+                                <h2>Decision Report</h2>
+                            </div>
+                            <button class="btn-sm" onclick="copyToClipboard('decisionReport')">
+                                <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                </svg>
+                                Copy
+                            </button>
                         </div>
                         <div class="report-content-wrapper">
-                            <div id="decisionReport" class="report-content"></div>
+                            <pre class="report-content" id="decisionReport"></pre>
                         </div>
                     </div>
-                    <div class="report-card glass-card">
+                    <div class="section-card">
                         <div class="section-header">
-                            <h3>Execution Log</h3>
-                            <button class="btn-copy" onclick="copyReport('executionReport')">Copy</button>
+                            <div class="section-title">
+                                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <polyline points="4 17 10 11 4 5" />
+                                    <line x1="12" y1="19" x2="20" y2="19" />
+                                </svg>
+                                <h2>Execution Log</h2>
+                            </div>
+                            <button class="btn-sm" onclick="copyToClipboard('executionLog')">
+                                <svg class="icon-xs" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                </svg>
+                                Copy
+                            </button>
                         </div>
                         <div class="report-content-wrapper">
-                            <div id="executionReport" class="report-content"></div>
+                            <pre class="report-content log-style" id="executionLog"></pre>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Loading Overlay -->
-            <div class="loading-overlay" id="loadingOverlay" style="display: none;">
-                <div class="loading-content">
-                    <div class="loading-spinner"></div>
-                    <div class="loading-text">Processing <span id="loadingLayer">Layer 1</span></div>
-                    <div class="loading-phase" id="loadingPhase">Phase 1: Foundation</div>
-                    <div class="loading-progress">
-                        <div class="progress-bar" id="progressBar"></div>
+            <!-- Layer Detail Modal -->
+            <div class="modal" id="layerModal" style="display: none;">
+                <div class="modal-overlay" onclick="closeLayerModal()"></div>
+                <div class="modal-content section-card">
+                    <div class="modal-header">
+                        <div class="section-title">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="16" x2="12" y2="12" />
+                                <line x1="12" y1="8" x2="12.01" y2="8" />
+                            </svg>
+                            <h2 id="modalLayerTitle">Layer Details</h2>
+                        </div>
+                        <button class="btn-icon" onclick="closeLayerModal()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                        </button>
                     </div>
-                    <div class="loading-percent" id="loadingPercent">0%</div>
+                    <div class="modal-body" id="modalLayerBody">
+                    </div>
                 </div>
             </div>
 
-            <!-- Error Modal -->
-            <div class="error-modal" id="errorModal" style="display: none;">
-                <div class="error-modal-content glass-card">
-                    <div class="error-header">
-                        <span class="error-icon">⚠</span>
-                        <h3>Error Occurred</h3>
-                    </div>
-                    <div class="error-body">
-                        <p id="errorMessage"></p>
-                        <div class="error-details" id="errorDetails" style="display: none;">
-                            <h4>Technical Details</h4>
-                            <pre id="errorTrace"></pre>
+            <!-- Record Detail Modal -->
+            <div class="modal" id="recordModal" style="display: none;">
+                <div class="modal-overlay" onclick="closeRecordModal()"></div>
+                <div class="modal-content section-card modal-large">
+                    <div class="modal-header">
+                        <div class="section-title">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                            </svg>
+                            <h2 id="modalRecordTitle">Record Details</h2>
                         </div>
+                        <button class="btn-icon" onclick="closeRecordModal()">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18" />
+                                <line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                        </button>
                     </div>
-                    <div class="error-actions">
-                        <button class="btn btn-secondary" onclick="toggleErrorDetails()">Show Details</button>
-                        <button class="btn btn-primary" onclick="closeErrorModal()">Close</button>
+                    <div class="modal-body" id="modalRecordBody">
                     </div>
                 </div>
             </div>
+
+            <!-- Loading Overlay -->
+            <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+                <div class="loading-card">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-info">
+                        <span class="loading-title" id="loadingTitle">Executing Pipeline</span>
+                        <span class="loading-layer" id="loadingLayer">Initializing...</span>
+                    </div>
+                    <div class="loading-progress">
+                        <div class="progress-track">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <span class="progress-text" id="progressText">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Toast -->
+            <div class="toast-container" id="toastContainer"></div>
         </main>
 
         <!-- Footer -->
         <footer class="footer">
-            <p>DQS Engine v1.0 • 15 Layers • 7 Phases • "Rules Enforce, ML Informs, Humans Decide"</p>
+            <div class="footer-content">
+                <span>DQS Engine v2.0</span>
+                <span class="footer-sep">|</span>
+                <span>15 Layers</span>
+                <span class="footer-sep">|</span>
+                <span>7 Phases</span>
+                <span class="footer-sep">|</span>
+                <span>Enterprise Data Quality Platform</span>
+            </div>
         </footer>
     </div>
 
