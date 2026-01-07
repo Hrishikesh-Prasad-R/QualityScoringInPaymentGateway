@@ -547,19 +547,22 @@ def streaming_worker():
             # Store log (already thread-safe)
             log_storage.add_log(transaction, result)
             
-            # Emit via WebSocket
+            # Emit via WebSocket (broadcast=True for background threads)
+            # This doesn't require request context
             if socketio:
                 socketio.emit('transaction_result', {
                     'transaction': transaction,
                     'result': result,
                     'stats': log_storage.get_stats()
-                })
+                }, broadcast=True)
             
             # Wait 1 second
             time.sleep(1)
             
         except Exception as e:
             print(f"Streaming error: {e}")
+            import traceback
+            traceback.print_exc()
             time.sleep(1)
     
     # Flush logs on stop
