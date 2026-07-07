@@ -3,7 +3,11 @@
  * Professional data quality analysis with AI-powered insights
  */
 
-const API_BASE = '';
+// API base URL — reads from global config injected by index.html.
+// When hosted on Vercel, index.html sets window.DQS_CONFIG.apiBase to the Render URL.
+// When served locally by Flask, falls back to '' (same origin).
+const API_BASE = (window.DQS_CONFIG && window.DQS_CONFIG.apiBase) ? window.DQS_CONFIG.apiBase : '';
+
 
 // Layer metadata
 const LAYERS = {
@@ -255,6 +259,46 @@ function clearFile() {
     document.getElementById('dropZone').style.display = 'block';
     document.getElementById('csvFile').value = '';
     document.getElementById('dataPreviewSection').style.display = 'none';
+    // Reset example button
+    const btn = document.getElementById('loadExampleBtn');
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Load Example CSV`;
+    }
+}
+
+async function loadExampleDataset() {
+    const btn = document.getElementById('loadExampleBtn');
+    btn.disabled = true;
+    btn.innerHTML = `<svg class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Loading...`;
+
+    try {
+        const resp = await fetch(`${API_BASE}/api/example-dataset`);
+        const data = await resp.json();
+
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load example dataset');
+        }
+
+        // Load into the CSV pipeline
+        csvContent = data.csv_content;
+        customData = parseCSV(csvContent);
+
+        // Show file info
+        document.getElementById('dropZone').style.display = 'none';
+        document.getElementById('fileInfo').style.display = 'flex';
+        document.getElementById('fileName').textContent = data.filename;
+        document.getElementById('fileSize').textContent = `${data.total_rows.toLocaleString()} transactions · 26 anomalies`;
+
+        showDataPreview(customData);
+        showToast('success', `Loaded ${data.total_rows.toLocaleString()} transactions — ${data.anomaly_profiles.map(p => p.name).join(', ')}`);
+
+        btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Dataset loaded`;
+    } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Load Example CSV`;
+        showToast('error', 'Failed to load example dataset: ' + err.message);
+    }
 }
 
 function formatSize(bytes) {

@@ -7,6 +7,24 @@
     <title>DQS Engine - Enterprise Data Quality Platform</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!--
+      DQS_CONFIG — Backend URL configuration
+      =========================================
+      LOCAL (Flask serves frontend):  leave apiBase as '' — calls go to same origin.
+      SPLIT (Vercel frontend + Render backend):
+        Set apiBase to your Render service URL, e.g.:
+        apiBase: 'https://dqs-engine.onrender.com'
+
+      You can also set this via a build-time replacement script
+      (see documentation/deployment.md for details).
+    -->
+    <script>
+      window.DQS_CONFIG = {
+        apiBase: ''   // ← Replace with your Render URL when deploying to Vercel
+      };
+    </script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
 </head>
 
@@ -40,6 +58,41 @@
         </header>
 
         <main class="main-content">
+
+            <!-- Hero Stats Banner -->
+            <div class="hero-banner">
+                <div class="hero-badge">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    IITM × VISA AI Hackathon
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <span class="hero-stat-value">15</span>
+                        <span class="hero-stat-label">Pipeline Layers</span>
+                    </div>
+                    <div class="hero-stat-divider"></div>
+                    <div class="hero-stat">
+                        <span class="hero-stat-value">7</span>
+                        <span class="hero-stat-label">DQS Dimensions</span>
+                    </div>
+                    <div class="hero-stat-divider"></div>
+                    <div class="hero-stat">
+                        <span class="hero-stat-value">~5ms</span>
+                        <span class="hero-stat-label">Per Record</span>
+                    </div>
+                    <div class="hero-stat-divider"></div>
+                    <div class="hero-stat">
+                        <span class="hero-stat-value">15</span>
+                        <span class="hero-stat-label">Business Rules</span>
+                    </div>
+                    <div class="hero-stat-divider"></div>
+                    <div class="hero-stat">
+                        <span class="hero-stat-value">95</span>
+                        <span class="hero-stat-label">Tests Passing</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Data Input Section -->
             <section class="section-card" id="inputSection">
                 <div class="section-header">
@@ -149,6 +202,40 @@
 
                 <!-- CSV Tab -->
                 <div class="tab-content" id="tab-csv">
+                    <!-- Example Dataset Banner -->
+                    <div class="example-dataset-banner" id="exampleDatasetBanner">
+                        <div class="example-dataset-left">
+                            <div class="example-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                </svg>
+                            </div>
+                            <div class="example-info">
+                                <div class="example-title">Try the Benchmark Dataset</div>
+                                <div class="example-desc">1,000 VISA transactions · 26 labeled anomalies across 5 real fraud profiles</div>
+                                <div class="example-profiles">
+                                    <span class="profile-badge mismatch">BIN Mismatch ×10</span>
+                                    <span class="profile-badge velocity">Velocity Attack ×5</span>
+                                    <span class="profile-badge amount">Extreme Amount ×5</span>
+                                    <span class="profile-badge malformed">Malformed Fields ×5</span>
+                                    <span class="profile-badge geo">Geo-Mismatch ×1</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn-example-load" id="loadExampleBtn" onclick="loadExampleDataset()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="7 10 12 15 17 10"/>
+                                <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                            Load Example CSV
+                        </button>
+                    </div>
+
+                    <div class="upload-divider">
+                        <span>or upload your own</span>
+                    </div>
+
                     <div class="upload-container">
                         <div class="drop-zone" id="dropZone">
                             <svg class="drop-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"

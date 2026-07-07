@@ -77,12 +77,32 @@ def sanitize_for_json(obj):
 
 app = Flask(__name__, static_folder='frontend', static_url_path='')
 app.json_encoder = SafeJSONEncoder
-app.config['SECRET_KEY'] = 'dqs-engine-secret-key'
-CORS(app)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dqs-engine-secret-key')
+
+# ── CORS ────────────────────────────────────────────────────────────────────
+# Base allowed origins: localhost for dev + any Vercel preview/production URLs.
+# Add your real Vercel URL via the ALLOWED_ORIGINS env var in the Render dashboard,
+# e.g.  ALLOWED_ORIGINS=https://dqs-engine.vercel.app,https://dqs-engine-git-main.vercel.app
+_default_origins = [
+    "http://localhost:3000",
+    "http://localhost:5000",
+    "http://127.0.0.1:5000",
+    "http://127.0.0.1:3000",
+]
+_extra = os.environ.get("ALLOWED_ORIGINS", "")
+_allowed_origins = _default_origins + [o.strip() for o in _extra.split(",") if o.strip()]
+
+CORS(app, origins=_allowed_origins, supports_credentials=True)
 
 # Initialize SocketIO if available
 if SOCKETIO_AVAILABLE:
-    socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+    socketio = SocketIO(
+        app,
+        cors_allowed_origins=_allowed_origins,
+        async_mode='eventlet',
+        logger=False,
+        engineio_logger=False,
+    )
 else:
     socketio = None
 
@@ -127,6 +147,36 @@ def health():
         "layers": 15,
         "phases": 7
     })
+
+
+@app.route('/api/example-dataset')
+def example_dataset():
+    """Serve the evaluation dataset CSV so the frontend can load it as a demo."""
+    dataset_path = os.path.join(os.path.dirname(__file__), 'data', 'evaluation_visa_dataset.csv')
+    if not os.path.exists(dataset_path):
+        return jsonify({"success": False, "error": "Example dataset not found"}), 404
+    try:
+        with open(dataset_path, 'r', encoding='utf-8') as f:
+            csv_content = f.read()
+        # Return metadata + first 5 rows preview
+        lines = csv_content.strip().split('\n')
+        return jsonify({
+            "success": True,
+            "csv_content": csv_content,
+            "total_rows": len(lines) - 1,  # exclude header
+            "filename": "evaluation_visa_dataset.csv",
+            "description": "1,000 VISA transactions with 26 labeled anomalies across 5 fraud profiles",
+            "anomaly_profiles": [
+                {"name": "BIN-Network Mismatch", "count": 10},
+                {"name": "Velocity Anomaly", "count": 5},
+                {"name": "Extreme Amount", "count": 5},
+                {"name": "Malformed Fields", "count": 5},
+                {"name": "Geo-Mismatch / Impossible Travel", "count": 1},
+            ],
+            "preview_headers": lines[0].split(',') if lines else []
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route('/api/generate', methods=['POST'])

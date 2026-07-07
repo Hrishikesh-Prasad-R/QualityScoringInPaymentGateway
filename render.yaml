@@ -1,13 +1,25 @@
 services:
   - type: web
-    name: dqs-engine
+    name: dqs-engine-backend
     runtime: python
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python scripts/train_anomaly_model.py
     startCommand: gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:$PORT app:app
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"
-      - key: GEMINI_API_KEY
-        sync: false
       - key: FLASK_DEBUG
         value: "false"
+
+      # ── Required for AI features (optional — fallback works without it) ──
+      - key: GEMINI_API_KEY
+        sync: false   # Set this manually in the Render dashboard
+
+      # ── Required for split Vercel + Render deployment ──────────────────
+      # Set this to your Vercel URL(s), comma-separated.
+      # Example: https://dqs-engine.vercel.app,https://dqs-engine-git-main-yourname.vercel.app
+      - key: ALLOWED_ORIGINS
+        sync: false   # Set this manually in the Render dashboard after Vercel deploy
+
+      # ── Optional security ───────────────────────────────────────────────
+      - key: SECRET_KEY
+        generateValue: true
