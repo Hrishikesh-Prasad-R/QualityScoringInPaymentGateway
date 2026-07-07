@@ -256,6 +256,7 @@ def adapt_csv_to_visa(csv_content: str) -> Tuple[List[Dict], Dict[str, Any]]:
     # Parse CSV
     reader = csv.DictReader(io.StringIO(csv_content))
     headers = reader.fieldnames or []
+    rows = list(reader)
     
     # Detect column mappings
     column_mapping = detect_csv_columns(headers)
@@ -263,8 +264,23 @@ def adapt_csv_to_visa(csv_content: str) -> Tuple[List[Dict], Dict[str, Any]]:
     # Calculate compliance
     compliance_score, missing_fields = calculate_schema_compliance(column_mapping)
     
+    # If compliance is low, attempt GenAI mapper to discover missing columns
+    ai_mapped = False
+    if compliance_score < 80 and os.environ.get("GEMINI_API_KEY"):
+        from src.layers.layer1_2_schema_mapper import GenAISchemaMapper
+        mapper = GenAISchemaMapper()
+        ai_mapping = mapper.map_columns(headers, rows)
+        if ai_mapping:
+            # Merge mappings, giving priority to Gemini findings for unmapped fields
+            for std_field, raw_col in ai_mapping.items():
+                if std_field not in column_mapping:
+                    column_mapping[std_field] = raw_col
+            # Recalculate compliance
+            compliance_score, missing_fields = calculate_schema_compliance(column_mapping)
+            ai_mapped = True
+    
     # Convert rows
-    for i, row in enumerate(reader):
+    for i, row in enumerate(rows):
         txn = convert_csv_row_to_visa(row, column_mapping, i)
         transactions.append(txn)
     
@@ -277,10 +293,16 @@ def adapt_csv_to_visa(csv_content: str) -> Tuple[List[Dict], Dict[str, Any]]:
         "total_rows": len(transactions),
         "is_standard_format": compliance_score >= 80,
         "quality_penalty": max(0, (100 - compliance_score) / 2),  # Up to 50% penalty
-        "warnings": []
+        "warnings": [],
+        "ai_mapped": ai_mapped
     }
     
-    if compliance_score < 80:
+    if ai_mapped:
+        metadata["warnings"].append(
+            f"Dynamic schema alignment active: GenAI successfully mapped raw columns "
+            f"to standard fields. Compliance improved to {compliance_score:.0f}%."
+        )
+    elif compliance_score < 80:
         metadata["warnings"].append(
             f"CSV schema compliance: {compliance_score:.0f}%. "
             f"Missing fields: {', '.join(missing_fields[:5])}{'...' if len(missing_fields) > 5 else ''}. "
@@ -322,6 +344,18 @@ def adapt_flat_json_to_visa(data: List[Dict]) -> Tuple[List[Dict], Dict[str, Any
     column_mapping = detect_csv_columns(headers)
     compliance_score, missing_fields = calculate_schema_compliance(column_mapping)
     
+    ai_mapped = False
+    if compliance_score < 80 and os.environ.get("GEMINI_API_KEY"):
+        from src.layers.layer1_2_schema_mapper import GenAISchemaMapper
+        mapper = GenAISchemaMapper()
+        ai_mapping = mapper.map_columns(headers, data)
+        if ai_mapping:
+            for std_field, raw_col in ai_mapping.items():
+                if std_field not in column_mapping:
+                    column_mapping[std_field] = raw_col
+            compliance_score, missing_fields = calculate_schema_compliance(column_mapping)
+            ai_mapped = True
+            
     transactions = []
     for i, row in enumerate(data):
         txn = convert_csv_row_to_visa(row, column_mapping, i)
@@ -335,12 +369,19 @@ def adapt_flat_json_to_visa(data: List[Dict]) -> Tuple[List[Dict], Dict[str, Any
         "total_rows": len(transactions),
         "is_standard_format": compliance_score >= 80,
         "quality_penalty": max(0, (100 - compliance_score) / 2),
-        "warnings": []
+        "warnings": [],
+        "ai_mapped": ai_mapped
     }
     
-    if compliance_score < 80:
+    if ai_mapped:
+        metadata["warnings"].append(
+            f"Dynamic schema alignment active: GenAI successfully mapped raw keys "
+            f"to standard fields. Compliance improved to {compliance_score:.0f}%."
+        )
+    elif compliance_score < 80:
         metadata["warnings"].append(
             f"JSON schema compliance: {compliance_score:.0f}%. Use nested VISA format for best results."
         )
     
     return transactions, metadata
+

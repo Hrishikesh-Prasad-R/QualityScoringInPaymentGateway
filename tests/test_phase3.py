@@ -269,14 +269,14 @@ class TestLayer43SemanticValidation:
         )
         assert has_settlement_violation
     
-    def test_12_rules_evaluated(self):
-        """Test that all 12 business rules are evaluated."""
+    def test_15_rules_evaluated(self):
+        """Test that all 15 business rules are evaluated (BR001-BR015)."""
         df, features = get_processed_data()
         
         layer = SemanticValidationLayer()
         result = layer.validate(df, features)
         
-        assert result.details["rules_evaluated"] == 12
+        assert result.details["rules_evaluated"] == 15
 
 
 class TestPhase3Integration:

@@ -36,6 +36,8 @@ from src.data_generator import generate_visa_transactions
 from src.csv_adapter import adapt_csv_to_visa, adapt_flat_json_to_visa
 from src.config import Action
 from src.live_data_generator import LiveDataGenerator, LiveLogStorage
+from src.security import require_hmac_signature
+
 
 
 class SafeJSONEncoder(json.JSONEncoder):
@@ -156,6 +158,7 @@ def generate_data():
 
 
 @app.route('/api/run', methods=['POST'])
+@require_hmac_signature
 def run_pipeline():
     """Run the complete DQS pipeline with graceful CSV/JSON handling."""
     try:

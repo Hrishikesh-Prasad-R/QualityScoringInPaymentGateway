@@ -283,6 +283,24 @@ class LoggingTraceLayer:
                 record_traces=self.record_traces,
             )
             
+            # Persist run to SQLite history database (Task 8 production-grade logging)
+            try:
+                from src.database import DQSDatabase
+                db = DQSDatabase()
+                db.save_run(
+                    batch_id=batch_id,
+                    execution_id=execution_id,
+                    timestamp=end_time.isoformat(),
+                    record_count=n_records,
+                    average_dqs=round(avg_dqs, 2),
+                    quality_rate=round(quality_rate, 1),
+                    total_duration_ms=total_duration,
+                    action_counts=action_counts,
+                    execution_report=self.generate_execution_report()
+                )
+            except Exception as db_err:
+                warnings.append(f"Failed to log to SQLite history database: {db_err}")
+            
             checks_passed += 1
             
             # ================================================================

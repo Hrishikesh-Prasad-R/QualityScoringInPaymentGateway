@@ -96,6 +96,29 @@ class AnomalyDetectionLayer:
         self.model_fitted = False
         self.scaler = None
         self.isolation_forest = None
+        self.pretrained = False
+
+        # Try to load pre-trained scaler and Isolation Forest model
+        if SKLEARN_AVAILABLE:
+            import joblib
+            import os
+            
+            resources_dir = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                "resources"
+            )
+            scaler_path = os.path.join(resources_dir, "anomaly_scaler.pkl")
+            model_path = os.path.join(resources_dir, "anomaly_model.pkl")
+
+            if os.path.exists(scaler_path) and os.path.exists(model_path):
+                try:
+                    self.scaler = joblib.load(scaler_path)
+                    self.isolation_forest = joblib.load(model_path)
+                    self.pretrained = True
+                    self.model_fitted = True
+                except Exception:
+                    self.pretrained = False
+                    self.model_fitted = False
     
     def detect(
         self,
@@ -172,27 +195,36 @@ class AnomalyDetectionLayer:
             # ================================================================
             checks_performed += 1
             
-            if SKLEARN_AVAILABLE and len(process_indices) >= 10:
+            # We can use IsolationForest if either sklearn is available and we have a pretrained model,
+            # OR we have at least 10 records to fit a new model online.
+            if SKLEARN_AVAILABLE and (self.pretrained or len(process_indices) >= 10):
                 try:
-                    # Scale features
-                    self.scaler = StandardScaler()
-                    X_scaled = self.scaler.fit_transform(X)
-                    
-                    # Fit Isolation Forest with FROZEN parameters
-                    self.isolation_forest = IsolationForest(
-                        n_estimators=self.N_ESTIMATORS,
-                        contamination=self.CONTAMINATION,
-                        random_state=self.RANDOM_STATE,  # FROZEN for reproducibility
-                        n_jobs=-1,
-                    )
-                    
-                    # Get anomaly scores
-                    # Note: decision_function returns negative for anomalies
-                    raw_scores = self.isolation_forest.fit_predict(X_scaled)
-                    decision_scores = self.isolation_forest.decision_function(X_scaled)
+                    if self.pretrained:
+                        # Use pre-trained scaler
+                        X_scaled = self.scaler.transform(X)
+                        
+                        # Get predictions and decision scores directly (no fitting)
+                        raw_scores = self.isolation_forest.predict(X_scaled)
+                        decision_scores = self.isolation_forest.decision_function(X_scaled)
+                    else:
+                        # Scale features online
+                        self.scaler = StandardScaler()
+                        X_scaled = self.scaler.fit_transform(X)
+                        
+                        # Fit Isolation Forest online with FROZEN parameters
+                        self.isolation_forest = IsolationForest(
+                            n_estimators=self.N_ESTIMATORS,
+                            contamination=self.CONTAMINATION,
+                            random_state=self.RANDOM_STATE,  # FROZEN for reproducibility
+                            n_jobs=-1,
+                        )
+                        
+                        # Get anomaly scores
+                        raw_scores = self.isolation_forest.fit_predict(X_scaled)
+                        decision_scores = self.isolation_forest.decision_function(X_scaled)
+                        self.model_fitted = True
                     
                     # Normalize to 0-1 (0 = normal, 1 = anomalous)
-                    # decision_function: higher = more normal, so we invert
                     min_score = decision_scores.min()
                     max_score = decision_scores.max()
                     if max_score > min_score:
@@ -200,17 +232,16 @@ class AnomalyDetectionLayer:
                     else:
                         if_scores = np.zeros(len(decision_scores))
                     
-                    self.model_fitted = True
                     checks_passed += 1
                     
                 except Exception as e:
-                    warnings_list.append(f"Isolation Forest failed: {str(e)}")
+                    warnings_list.append(f"Isolation Forest inference failed: {str(e)}")
                     if_scores = np.zeros(len(process_indices))
             else:
                 if not SKLEARN_AVAILABLE:
                     warnings_list.append("sklearn not available, using statistical methods only")
                 else:
-                    warnings_list.append("Too few records for Isolation Forest")
+                    warnings_list.append("Too few records for online Isolation Forest and no pretrained model available")
                 if_scores = np.zeros(len(process_indices))
             
             # ================================================================

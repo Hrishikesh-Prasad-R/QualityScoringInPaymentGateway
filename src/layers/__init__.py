@@ -1,6 +1,7 @@
 # Layers package
 from .layer1_input_contract import InputContractLayer, LayerResult
 from .layer2_input_validation import InputValidationLayer
+from .layer1_2_schema_mapper import GenAISchemaMapper
 from .layer3_feature_extraction import FeatureExtractionLayer
 from .layer4_1_structural import StructuralIntegrityLayer
 from .layer4_2_field_compliance import FieldComplianceLayer
@@ -18,6 +19,7 @@ from .layer11_logging import LoggingTraceLayer
 __all__ = [
     "InputContractLayer",
     "InputValidationLayer",
+    "GenAISchemaMapper",
     "FeatureExtractionLayer",
     "StructuralIntegrityLayer",
     "FieldComplianceLayer",
@@ -35,3 +37,4 @@ __all__ = [
     "BatchPayload",
     "LayerResult",
 ]
+

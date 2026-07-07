@@ -18,16 +18,32 @@ from typing import Optional, Dict, Any, List, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime
 import os
+import logging
+
+logger = logging.getLogger("DQS.Summarization")
 
 from ..config import LayerStatus
 from .layer1_input_contract import LayerResult
 
-# Try to import Gemini
+# Try to import Gemini and Instructor
 try:
     import google.generativeai as genai
+    import instructor
+    from pydantic import BaseModel, Field
     GEMINI_AVAILABLE = True
 except ImportError:
     GEMINI_AVAILABLE = False
+
+
+if GEMINI_AVAILABLE:
+    class FieldCorrection(BaseModel):
+        field: str = Field(..., description="The name of the payment field that requires correction")
+        corrected_value: str = Field(..., description="The inferred correct value for the field based on transaction context")
+        confidence: int = Field(..., description="Confidence score from 0 to 100")
+        reasoning: str = Field(..., description="Explanation of why this correction is proposed")
+
+    class FieldCorrectionsBatch(BaseModel):
+        corrections: List[FieldCorrection] = Field(default_factory=list, description="List of proposed field corrections")
 
 
 @dataclass
@@ -74,6 +90,7 @@ class GenAISummarizationLayer:
         self.summaries: List[QualitySummary] = []
         self.use_ai = use_ai and GEMINI_AVAILABLE
         self.gemini_model = None
+        self.instructor_client = None
         self.ai_calls_made = 0
         self.ai_calls_failed = 0
         
@@ -84,6 +101,7 @@ class GenAISummarizationLayer:
                 try:
                     genai.configure(api_key=key)
                     self.gemini_model = genai.GenerativeModel(self.GEMINI_MODEL)
+                    self.instructor_client = instructor.from_gemini(client=self.gemini_model)
                 except Exception as e:
                     self.use_ai = False
     
@@ -156,7 +174,14 @@ class GenAISummarizationLayer:
             priority_counts = {"critical": 0, "high": 0, "medium": 0, "low": 0, "none": 0}
             for s in self.summaries:
                 priority_counts[s.priority] += 1
-            
+
+            # Collect corrections across all records for API exposure
+            corrections_by_record = {}
+            for s in self.summaries:
+                corr = s.context.get("suggested_corrections", [])
+                if corr:
+                    corrections_by_record[str(s.record_id)] = corr
+
             return self._create_result(
                 status=LayerStatus.PASSED,
                 start_time=start_time,
@@ -171,8 +196,10 @@ class GenAISummarizationLayer:
                     "ai_enabled": self.use_ai,
                     "ai_calls_made": self.ai_calls_made,
                     "ai_calls_failed": self.ai_calls_failed,
+                    "corrections_by_record": corrections_by_record,
                 },
             )
+
             
         except Exception as e:
             issues.append({
@@ -331,6 +358,13 @@ class GenAISummarizationLayer:
                 record_id, priority, dqs, amount, key_issues
             )
         
+        # Generate field corrections using Gemini (agentic behavior)
+        suggested_corrections = []
+        if self.use_ai and self.gemini_model and priority in ["critical", "high"] and key_issues:
+            suggested_corrections = self._generate_field_corrections(
+                record_id, quality_data, key_issues
+            )
+
         return QualitySummary(
             record_id=record_id,
             summary=summary_text,
@@ -342,6 +376,7 @@ class GenAISummarizationLayer:
                 "anomaly_score": anomaly_score,
                 "amount": amount,
                 "risk_score": risk_score,
+                "suggested_corrections": suggested_corrections,
             },
             ai_enhanced=ai_enhanced,
         )
@@ -396,6 +431,81 @@ Be concise and professional. Use plain text only (no markdown, no emojis)."""
         except Exception as e:
             self.ai_calls_failed += 1
             return None
+    def _generate_field_corrections(
+        self,
+        record_id: Any,
+        quality_data: Dict[str, Any],
+        key_issues: List[str],
+    ) -> List[Dict[str, Any]]:
+        """
+        Use Gemini and Instructor to infer corrected values for failing fields.
+        Retries up to 3 times on schema failure, feeding error details back to the model.
+        """
+        if not self.instructor_client or not key_issues:
+            return []
+
+        self.ai_calls_made += 1
+
+        dimensions = quality_data.get("dimensions", {})
+        failing_dims = [
+            f"{dim} (score: {score:.0f}%)"
+            for dim, score in dimensions.items()
+            if score < 70
+        ]
+
+        base_prompt = f"""You are a payments data repair agent. Given field-level data quality failures,
+suggest the correct value for each failing field based on context from other fields.
+
+Record context:
+- Transaction ID: {record_id}
+- Amount: {quality_data.get('amount', 'unknown')}
+- Risk Score: {quality_data.get('risk_score', 'unknown')}
+- Domestic Transaction: {bool(quality_data.get('is_domestic', 1))}
+
+Failing quality dimensions: {', '.join(failing_dims) if failing_dims else 'See issues below'}
+
+Key issues detected:
+{chr(10).join(f'- {issue}' for issue in key_issues[:5])}
+
+Only suggest corrections where you are reasonably confident (confidence >= 60).
+If no corrections are possible, return an empty corrections list."""
+
+        errors_context = ""
+        max_attempts = 3
+
+        for attempt in range(1, max_attempts + 1):
+            try:
+                prompt = base_prompt
+                if errors_context:
+                    prompt += f"\n\nCRITICAL: Your previous response failed validation with the following errors. Please correct them:\n{errors_context}"
+
+                logger.info(f"GenAISummarizationLayer corrections call attempt {attempt}/{max_attempts}")
+                
+                result = self.instructor_client.chat.completions.create(
+                    messages=[
+                        {"role": "user", "content": prompt}
+                    ],
+                    response_model=FieldCorrectionsBatch,
+                )
+
+                validated = []
+                for c in result.corrections:
+                    if c.confidence >= 60:
+                        validated.append({
+                            "field": c.field,
+                            "corrected_value": c.corrected_value,
+                            "confidence": c.confidence,
+                            "reasoning": c.reasoning,
+                        })
+
+                return validated
+
+            except Exception as e:
+                logger.warning(f"GenAISummarizationLayer corrections failed on attempt {attempt}: {str(e)}")
+                errors_context = str(e)
+
+        self.ai_calls_failed += 1
+        return []
     
     def _generate_summary_text(
         self,

@@ -292,6 +292,7 @@ class DecisionGateLayer:
         # ================================================================
         # RULE 3: Semantic violations -> ESCALATE
         # ================================================================
+        if r.semantic_violations:
             return (
                 Action.ESCALATE,
                 f"Business Rules: {', '.join(r.semantic_violations[:1])}",

@@ -81,6 +81,7 @@ class DQSEngine:
         self.use_ai = use_ai
         self.layer_timings: List[LayerTiming] = []
         self.layer_results: Dict[float, Any] = {}
+        self.decisions: List[Any] = []
         
         # Import layers
         from src.layers import (
@@ -331,6 +332,7 @@ class DQSEngine:
                 batch_id=batch_id,
             )
             self.layer_results[9] = result9
+            self.decisions = layer9.get_decisions()
             self._log_layer_end(9, "Decision Gate", start, result9.status.value)
             
             safe_count = result9.details.get('safe_count', 0)

@@ -1,0 +1,15 @@
+# Ignore document files to avoid requiring LLM API keys or slowing down indexer
+*.md
+*.docx
+*.txt
+*.html
+*.csv
+*.xlsx
+*.pdf
+*.zip
+*.yaml
+*.yml
+.git/
+.venv/
+node_modules/
+graphify-out/

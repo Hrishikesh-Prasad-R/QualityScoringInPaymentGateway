@@ -117,7 +117,7 @@ class SemanticValidationLayer:
             {
                 "rule_id": "BR008",
                 "name": "Domestic transaction should use domestic IP",
-                "severity": "warning",
+                "severity": "critical",
                 "check": self._check_geo_consistency,
             },
             {
@@ -129,7 +129,7 @@ class SemanticValidationLayer:
             {
                 "rule_id": "BR010",
                 "name": "Failed velocity check should increase risk",
-                "severity": "warning",
+                "severity": "critical",
                 "check": self._check_velocity_risk_correlation,
             },
             {
@@ -143,6 +143,24 @@ class SemanticValidationLayer:
                 "name": "Billing and shipping country should match for domestic",
                 "severity": "warning",
                 "check": self._check_address_country_match,
+            },
+            {
+                "rule_id": "BR013",
+                "name": "BIN prefix must match card network",
+                "severity": "critical",
+                "check": self._check_bin_network_consistency,
+            },
+            {
+                "rule_id": "BR014",
+                "name": "Crucial fields must match compliance format requirements",
+                "severity": "critical",
+                "check": self._check_field_formats,
+            },
+            {
+                "rule_id": "BR015",
+                "name": "Transaction amount must not be extreme outlier",
+                "severity": "critical",
+                "check": self._check_extreme_amount,
             },
         ]
     
@@ -499,19 +517,77 @@ class SemanticValidationLayer:
         """BR008: Domestic transaction should use domestic IP."""
         is_domestic = feat_row.get("merchant_is_domestic", 1)
         ip_domestic = feat_row.get("customer_ip_is_domestic", 1)
+        geo_passed = feat_row.get("fraud_geo_passed", 1)
         
-        # For domestic merchants, IP should ideally be domestic
-        if is_domestic == 1:
-            passed = ip_domestic == 1
-        else:
-            passed = True  # International transactions can have any IP
-        
+        # We fail if either the pre-calculated geo check failed
+        # or a domestic merchant is paired with a foreign IP address
+        passed = True
+        if geo_passed == 0:
+            passed = False
+        elif is_domestic == 1 and ip_domestic == 0:
+            passed = False
+            
         return RuleResult(
             rule_id="BR008",
             rule_name="Geo consistency",
             passed=passed,
-            severity="warning",
-            message="" if passed else "Domestic merchant with foreign IP",
+            severity="critical",
+            message="" if passed else "Geographic inconsistency (failed geo check or domestic merchant with foreign IP)",
+        )
+        
+    def _check_field_formats(self, row: pd.Series, feat_row: pd.Series) -> RuleResult:
+        """BR014: Check crucial compliance field formats."""
+        import re
+        
+        email = row.get("customer_email", "")
+        mcc = str(row.get("merchant_merchant_category_code", ""))
+        txn_id = str(row.get("txn_transaction_id", ""))
+        
+        passed = True
+        message = ""
+        
+        if pd.notna(email) and email != "":
+            if not re.match(r'^[^@]+@[^@]+\.[^@]+$', str(email)):
+                passed = False
+                message = "Invalid email format"
+                
+        if passed and pd.notna(mcc) and mcc != "":
+            if not re.match(r'^\d{4}$', mcc):
+                passed = False
+                message = "Invalid MCC format"
+                
+        if passed and pd.notna(txn_id) and txn_id != "":
+            if not re.match(r'^[a-zA-Z0-9_-]+$', txn_id) or len(txn_id) < 5:
+                passed = False
+                message = "Invalid transaction ID format"
+                
+        return RuleResult(
+            rule_id="BR014",
+            rule_name="Field formats compliance",
+            passed=passed,
+            severity="critical",
+            message=message,
+        )
+    
+    def _check_extreme_amount(self, row: pd.Series, feat_row: pd.Series) -> RuleResult:
+        """BR015: Flag transactions with extreme outlier amounts (> 100,000 INR)."""
+        # Absolute threshold: amounts above 100,000 require manual review
+        EXTREME_AMOUNT_THRESHOLD = 100_000
+        
+        amount = feat_row.get("txn_amount", 0)
+        try:
+            amount = float(amount)
+        except (TypeError, ValueError):
+            amount = 0
+        
+        passed = amount <= EXTREME_AMOUNT_THRESHOLD
+        
+        return RuleResult(
+            rule_id="BR015",
+            rule_name="Extreme amount check",
+            passed=passed,
+            severity="critical",
+            message="" if passed else f"Extreme transaction amount: {amount:,.0f} (threshold: {EXTREME_AMOUNT_THRESHOLD:,})",
         )
     
     def _check_3ds_for_high_value(self, row: pd.Series, feat_row: pd.Series) -> RuleResult:
@@ -582,6 +658,25 @@ class SemanticValidationLayer:
             passed=passed,
             severity="warning",
             message="" if passed else f"Domestic merchant but foreign address",
+        )
+    
+    def _check_bin_network_consistency(self, row: pd.Series, feat_row: pd.Series) -> RuleResult:
+        """BR013: BIN prefix must match the card network brand."""
+        bin_cat = feat_row.get("card_bin_category", 2)  # 0=VISA, 1=MC, 2=Other
+        network = str(row.get("card_network", "")).lower().strip()
+        
+        passed = True
+        if bin_cat == 0 and "visa" not in network:
+            passed = False
+        elif bin_cat == 1 and ("mastercard" not in network and "mc" not in network):
+            passed = False
+            
+        return RuleResult(
+            rule_id="BR013",
+            rule_name="BIN network consistency",
+            passed=passed,
+            severity="critical",
+            message="" if passed else f"BIN category {bin_cat} but card network claims '{network}'",
         )
     
     # ========================================================================

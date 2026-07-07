@@ -23,9 +23,24 @@ from typing import Optional, Dict, Any, List, Tuple
 from dataclasses import dataclass, field
 import hashlib
 import re
+import os
+
+try:
+    import redis
+    redis_client = redis.Redis(
+        host=os.environ.get("REDIS_HOST", "localhost"),
+        port=int(os.environ.get("REDIS_PORT", 6379)),
+        db=0,
+        socket_timeout=1
+    )
+    redis_client.ping()
+    REDIS_AVAILABLE = True
+except Exception:
+    REDIS_AVAILABLE = False
 
 from ..config import LayerStatus
 from .layer1_input_contract import LayerResult
+
 
 
 # ============================================================================
@@ -506,15 +521,37 @@ class FeatureExtractionLayer:
         return features
     
     def _categorize_bin(self, bin_value) -> int:
-        """Categorize BIN into card network (0=VISA, 1=MC, 2=Other)."""
+        """Categorize BIN into card network (0=VISA, 1=MC, 2=Other). Uses Redis caching if available."""
         try:
-            bin_int = int(str(bin_value)[:6])
+            bin_str = str(bin_value)[:6]
+            if not bin_str.isdigit():
+                return 2
+
+            # Try reading from cache first
+            if REDIS_AVAILABLE:
+                try:
+                    cached_val = redis_client.get(f"dqs:bin:{bin_str}")
+                    if cached_val is not None:
+                        return int(cached_val)
+                except Exception:
+                    pass
+
+            bin_int = int(bin_str)
             if 400000 <= bin_int <= 499999:
-                return 0  # VISA
+                result = 0  # VISA
             elif 510000 <= bin_int <= 559999 or 222100 <= bin_int <= 272099:
-                return 1  # Mastercard
+                result = 1  # Mastercard
             else:
-                return 2  # Other
+                result = 2  # Other
+
+            # Save to cache
+            if REDIS_AVAILABLE:
+                try:
+                    redis_client.setex(f"dqs:bin:{bin_str}", 3600, result)
+                except Exception:
+                    pass
+
+            return result
         except:
             return 2
     
@@ -618,7 +655,7 @@ class FeatureExtractionLayer:
         ip_col = self._get_column(df, ["customer_ip_address", "ip_address"])
         if ip_col:
             features["customer_ip_is_domestic"] = df[ip_col].apply(
-                lambda x: 1 if pd.notna(x) and str(x).startswith("103.") else 0
+                lambda x: 1 if pd.notna(x) and (str(x).startswith("103.") or str(x).startswith("192.168.")) else 0
             )
         else:
             features["customer_ip_is_domestic"] = 1
@@ -651,21 +688,70 @@ class FeatureExtractionLayer:
         else:
             features["fraud_risk_level_encoded"] = 0
         
+        # Parse columns for dynamic velocity/geo calculations using standardized schema names
+        ts_col = self._get_column(df, ["txn_timestamp", "timestamp"])
+        cust_col = self._get_column(df, ["customer_customer_id", "customer_id", "customer"])
+        country_col = self._get_column(df, ["merchant_country", "country"])
+        
+        # Sort and calculate velocity/geo checks dynamically if columns not present
+        dyn_vel = None
+        dyn_geo = None
+        if ts_col and cust_col:
+            try:
+                temp_df = pd.DataFrame({
+                    "orig_idx": df.index,
+                    "customer": df[cust_col],
+                    "time": pd.to_datetime(df[ts_col]),
+                    "country": df[country_col] if country_col else "IN"
+                }).sort_values(by=["customer", "time"])
+                
+                # Calculate time difference in seconds between consecutive rows of same customer (both forward and backward)
+                temp_df["time_diff_prev"] = temp_df.groupby("customer")["time"].diff().dt.total_seconds()
+                temp_df["time_diff_next"] = temp_df.groupby("customer")["time"].diff(-1).dt.total_seconds().abs()
+                temp_df["time_diff"] = temp_df["time_diff_prev"] # Keep for backward compatibility/geo checks
+                
+                # Minimum time difference to either neighbor
+                min_time_diff = temp_df[["time_diff_prev", "time_diff_next"]].min(axis=1)
+                
+                # Calculate if country changed between consecutive rows of same customer
+                temp_df["country_changed"] = temp_df.groupby("customer")["country"].shift(0) != temp_df.groupby("customer")["country"].shift(1)
+                temp_df.loc[temp_df.groupby("customer").head(1).index, "country_changed"] = False
+                
+                # Map back to original index
+                temp_df = temp_df.sort_values(by="orig_idx")
+                
+                # Dynamic velocity: fails if time diff to any neighbor < 60 seconds
+                dyn_vel = min_time_diff.reindex(temp_df.index).apply(
+                    lambda x: 0 if pd.notna(x) and x < 60 else 1
+                )
+                
+                # Dynamic geo impossible travel: fails if country changed and time diff < 12 hours (43200 seconds)
+                dyn_geo = temp_df.apply(
+                    lambda row: 0 if row["country_changed"] and pd.notna(row["time_diff"]) and row["time_diff"] < 43200 else 1,
+                    axis=1
+                )
+            except Exception:
+                pass
+        
         # Velocity check
         vel_col = self._get_column(df, ["fraud_velocity_check", "velocity_check"])
-        if vel_col:
+        if vel_col and df[vel_col].astype(str).str.lower().str.strip().isin(["pass", "fail", "0", "1"]).any():
             features["fraud_velocity_passed"] = df[vel_col].apply(
-                lambda x: 1 if str(x).lower().strip() == "pass" else 0
+                lambda x: 1 if str(x).lower().strip() in ["pass", "1"] else 0
             )
+        elif dyn_vel is not None:
+            features["fraud_velocity_passed"] = dyn_vel
         else:
             features["fraud_velocity_passed"] = 1
         
         # Geo check
         geo_col = self._get_column(df, ["fraud_geo_check", "geo_check"])
-        if geo_col:
+        if geo_col and df[geo_col].astype(str).str.lower().str.strip().isin(["pass", "fail", "0", "1"]).any():
             features["fraud_geo_passed"] = df[geo_col].apply(
-                lambda x: 1 if str(x).lower().strip() == "pass" else 0
+                lambda x: 1 if str(x).lower().strip() in ["pass", "1"] else 0
             )
+        elif dyn_geo is not None:
+            features["fraud_geo_passed"] = dyn_geo
         else:
             features["fraud_geo_passed"] = 1
         
